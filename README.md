@@ -26,7 +26,7 @@ sudo dnf install fontconfig-devel
 ```bash
 git clone https://github.com/masato-ro/sysinfopro.git
 cd sysinfopro
-SLINT_STYLE=cupertino cargo run --release
+cargo run --release
 ```
 
 ## 📝 開發筆記
