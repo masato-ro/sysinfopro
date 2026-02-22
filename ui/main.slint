@@ -41,7 +41,7 @@ component CpuItem {
 export component AppWindow inherits Window {
     title: "SysInfoPro v0.0.1";
     width: 850px;
-    height: 950px;
+    height: 900px;
 
     in property <[CpuData]> cpus;
     in property <[DiskData]> disks;
@@ -68,40 +68,80 @@ export component AppWindow inherits Window {
     msg_box := PopupWindow {
         x: (root.width - self.width) / 2;
         y: (root.height - self.height) / 2;
+        width: 420px;  // 稍微縮窄，看起來更像系統對話框
+        height: 480px;
 
         Rectangle {
-            background: #ffffff;
-            border-radius: 12px;
-            drop-shadow-blur: 25px;
-            drop-shadow-color: #00000044;
+            background: #F2F2F7;
+            border-radius: 16px;
+            drop-shadow-blur: 30px;
+            drop-shadow-color: #00000033;
 
-            Dialog {
-                padding: 30px;
+            VerticalBox {
+                padding: 25px;
+                spacing: 0px;
+
+                Text {
+                    text: root.dialog_title;
+                    font-size: 20px;
+                    font-weight: 700;
+                    height: 30px;
+                    horizontal-alignment: left;
+                    color: #000000;
+                }
+
                 VerticalLayout {
-                    spacing: 20px;
-                    alignment: start;
-                    Text {
-                        text: root.dialog_title;
-                        font-size: 20px;
-                        font-weight: 800;
-                        color: #2e3436;
-                        horizontal-alignment: left;
-                    }
-                    VerticalBox {
-                        padding: 16px;
-                        spacing: 12px;
-                        alignment: start;
-                        for entry in root.info_entries : HorizontalLayout {
-                            spacing: 15px;
-                            Text { text: entry.label; width: 100px; color: #5e5c64; font-weight: 600; }
-                            Text { text: entry.value; color: #2e3436; horizontal-stretch: 1; wrap: word-wrap; }
-                        }
+                    padding-top: 10px;
+                    padding-bottom: 15px;
+                    Rectangle { height: 1px; background: #E5E5E5; }
+                }
+
+                VerticalLayout {
+                    spacing: 12px;
+                    for entry in root.info_entries : HorizontalLayout {
+                        Text { text: entry.label; width: 90px; color: #8E8E93; font-size: 14px; }
+                        Text { text: entry.value; color: #000000; font-size: 14px; font-weight: 500; horizontal-stretch: 1; wrap: word-wrap; }
                     }
                 }
-                StandardButton {
-                    kind: ok;
-                    clicked => { msg_box.close(); }
+
+                // 彈簧，確保按鈕在最下面
+                Rectangle { vertical-stretch: 1; min-height: 20px; }
+
+                // 讓 OK 按鈕居中對齊
+                HorizontalLayout {
+                    alignment: center;
+                    StandardButton {
+                        kind: ok;
+                        width: 100px;
+                        clicked => { msg_box.close(); }
+                    }
                 }
+            }
+        }
+    }
+
+    // 選單欄 (置於視窗最上方)
+    MenuBar {
+        Menu {
+            title: @tr("檔案(&F)");
+            MenuItem {
+                title: @tr("重新整理");
+                activated => { root.refresh_clicked(); }
+            }
+            MenuItem {
+                title: @tr("系統詳細資訊");
+                activated => { root.info-clicked(); }
+            }
+            MenuItem {
+                title: @tr("結束程式");
+                activated => { root.exit-clicked(); }
+            }
+        }
+        Menu {
+            title: @tr("幫助(&H)");
+            MenuItem {
+                title: @tr("關於 SysInfoPro");
+                activated => { root.about-clicked(); }
             }
         }
     }
@@ -178,17 +218,6 @@ export component AppWindow inherits Window {
                     }
                 }
             }
-        }
-
-        HorizontalBox {
-            padding-top: 5px;
-            padding-bottom: 5px;
-            spacing: 12px;
-            alignment: center;
-            Button { text: "↻ 重新整理"; clicked => { root.refresh_clicked() } }
-            Button { text: "ℹ 系統資訊"; clicked => { root.info_clicked() } }
-            Button { text: "💬 關於"; clicked => { root.about_clicked() } }
-            Button { text: "❌ 結束"; clicked => { root.exit_clicked() } }
         }
 
         Rectangle {

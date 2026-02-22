@@ -46,7 +46,7 @@ fn main() -> Result<(), slint::PlatformError> {
             ui.set_cpus(Rc::new(slint::VecModel::from(cpu_vec)).into());
 
             // 2. 儲存裝置
-            let disk_vec: Vec<DiskData> = disks_info.iter().map(|d| {
+            let mut disk_vec: Vec<DiskData> = disks_info.iter().map(|d| {
                 let total = d.total_space() as f64 / 1_073_741_824.0;
                 let used = (d.total_space() - d.available_space()) as f64 / 1_073_741_824.0;
                 DiskData {
@@ -56,6 +56,7 @@ fn main() -> Result<(), slint::PlatformError> {
                     percent: (used / total * 100.0) as f32,
                 }
             }).collect();
+            disk_vec.sort_by(|a, b| a.mount.as_str().cmp(b.mount.as_str()));
             ui.set_disks(Rc::new(slint::VecModel::from(disk_vec)).into());
 
             // 3. 記憶體
@@ -143,9 +144,15 @@ fn main() -> Result<(), slint::PlatformError> {
             ui.set_dialog_title("關於 SysInfoPro".into());
 
             let entries = vec![
-                InfoEntry { label: "版本".into(), value: "v0.0.1".into() },
-                InfoEntry { label: "處理器".into(), value: "Ryzen 9 5900XT".into() },
-                InfoEntry { label: "技術".into(), value: "Rust & Slint".into() },
+                InfoEntry { label: "軟體名稱".into(), value: "SysInfoPro".into() },
+                InfoEntry { label: "軟體版本".into(), value: env!("CARGO_PKG_VERSION").into() }, // 自動抓 v0.1.0
+                InfoEntry { label: "開發核心".into(), value: "Rust 1.75+ / Slint 1.x".into() },
+                InfoEntry { label: "編譯平台".into(), value: "Windows MSVC 2026".into() },
+                InfoEntry { label: "硬體優化".into(), value: "AMD Ryzen 9 5900XT (32-Threads)".into() },
+                InfoEntry { label: "介面風格".into(), value: "Cupertino (macOS Visuals)".into() },
+                InfoEntry { label: "開發者".into(), value: "masato-ro".into() },
+                InfoEntry { label: "GitHub".into(), value: "github.com/masato-ro/sysinfopro".into() },
+                InfoEntry { label: "授權協定".into(), value: "MIT License".into() },
             ];
 
             ui.set_info_entries(Rc::new(slint::VecModel::from(entries)).into());
