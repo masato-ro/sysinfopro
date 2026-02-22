@@ -1,0 +1,214 @@
+import { StandardButton, Button, ProgressIndicator, ScrollView, GroupBox, VerticalBox, HorizontalBox } from "std-widgets.slint";
+
+export struct CpuData {
+    name: string,
+    usage: float,
+    freq: string,
+    is_high: bool,
+}
+
+export struct DiskData {
+    mount: string,
+    used: float,
+    total: float,
+    percent: float,
+}
+
+export struct InfoEntry {
+    label: string,
+    value: string,
+}
+
+component CpuItem {
+    in property <CpuData> cpu;
+    HorizontalLayout {
+        spacing: 8px;
+        height: 24px;
+        Text { text: cpu.name; width: 35px; color: #3584e4; font-weight: 700; vertical-alignment: center; font-size: 12px; }
+        ProgressIndicator { progress: cpu.usage / 100.0; horizontal-stretch: 1; }
+        Text {
+            text: cpu.freq;
+            width: 70px;
+            color: cpu.usage > 80 ? #c01c28 : #5e5c64;
+            horizontal-alignment: right;
+            vertical-alignment: center;
+            font-family: "Monospace";
+            font-size: 11px;
+        }
+    }
+}
+
+export component AppWindow inherits Window {
+    title: "SysInfoPro v0.0.1";
+    width: 850px;
+    height: 950px;
+
+    in property <[CpuData]> cpus;
+    in property <[DiskData]> disks;
+    in property <[InfoEntry]> info_entries: [];
+    in property <string> cpu_model: "Loading...";
+    in property <string> mem_label: "0 / 0 GB";
+    in property <string> net_label: "Down: 0 KB/s";
+    in property <string> proc_count: "0";
+    in property <string> cpu_temp: "0°C";
+    in property <string> uptime: "0h 0m";
+    in property <string> last_update: "00:00:00";
+    in property <int> cpu_count: 0;
+    in property <string> dialog_title: "";
+    in property <string> dialog_text: "";
+
+    callback refresh_clicked();
+    callback info_clicked();
+    callback about_clicked();
+    callback exit_clicked();
+
+    callback show_msg_box();
+    show_msg_box => { msg_box.show(); }
+
+    msg_box := PopupWindow {
+        width: 350px;
+        height: 400px;
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+
+        Rectangle {
+            background: #ffffff;
+            border-radius: 12px;
+            drop-shadow-blur: 25px;
+            drop-shadow-color: #00000044;
+
+            Dialog {
+                padding: 30px;
+                VerticalLayout {
+                    spacing: 20px;
+                    alignment: start;
+                    Text {
+                        text: root.dialog_title;
+                        font-size: 20px;
+                        font-weight: 800;
+                        color: #2e3436;
+                        horizontal-alignment: left;
+                    }
+                    VerticalBox {
+                        padding: 16px;
+                        spacing: 12px;
+                        alignment: start;
+                        for entry in root.info_entries : HorizontalLayout {
+                            spacing: 15px;
+                            Text { text: entry.label; width: 100px; color: #5e5c64; font-weight: 600; }
+                            Text { text: entry.value; color: #2e3436; horizontal-stretch: 1; wrap: word-wrap; }
+                        }
+                    }
+                }
+                StandardButton {
+                    kind: ok;
+                    clicked => { msg_box.close(); }
+                }
+            }
+        }
+    }
+
+    VerticalLayout {
+        Rectangle {
+            height: 1px;
+            background: #d6d6d1;
+        }
+
+        VerticalBox {
+            padding: 16px;
+            spacing: 16px;
+            vertical-stretch: 1;
+
+            GroupBox {
+                title: "系統概況";
+                height: 120px;
+                VerticalLayout {
+                    alignment: center;
+                    spacing: 12px;
+                    HorizontalLayout {
+                        Text { text: "處理器"; width: 80px; color: #5e5c64; vertical-alignment: center; }
+                        Rectangle {
+                            background: #ffffff; border-radius: 6px; height: 34px;
+                            border-width: 1px; border-color: #cdc7c2;
+                            Text { text: root.cpu_model; x: 12px; vertical-alignment: center; color: #2e3436; }
+                        }
+                    }
+                    HorizontalLayout {
+                        Text { text: "記憶體"; width: 80px; color: #5e5c64; vertical-alignment: center; }
+                        Rectangle {
+                            background: #ffffff; border-radius: 6px; height: 34px;
+                            border-width: 1px; border-color: #cdc7c2;
+                            Text { text: root.mem_label; x: 12px; vertical-alignment: center; color: #2e3436; }
+                        }
+                    }
+                }
+            }
+
+            GroupBox {
+                title: "儲存裝置";
+                height: 200px;
+                ScrollView {
+                    VerticalBox {
+                        alignment: start;
+                        for disk in root.disks : VerticalLayout {
+                            spacing: 4px;
+                            HorizontalLayout {
+                                Text { text: disk.mount; font-size: 13px; color: #2e3436; font-weight: 600; }
+                                Rectangle { horizontal-stretch: 1; }
+                                Text { text: round(disk.used) + "/" + round(disk.total) + " GB"; font-size: 12px; color: #5e5c64; }
+                            }
+                            ProgressIndicator { progress: disk.percent / 100.0; height: 8px; }
+                        }
+                    }
+                }
+            }
+
+            GroupBox {
+                title: "核心負載 (" + root.cpu_count + " Threads)";
+                vertical-stretch: 1;
+                ScrollView {
+                    viewport-height: (root.cpus.length / 2) * 34px;
+
+                    GridLayout {
+                        padding: 8px;
+                        spacing: 10px;
+                        for cpu[i] in root.cpus : CpuItem {
+                            row: floor(i / 2);
+                            col: mod(i, 2);
+                            cpu: cpu;
+                        }
+                    }
+                }
+            }
+        }
+
+        HorizontalBox {
+            padding-top: 5px;
+            padding-bottom: 5px;
+            spacing: 12px;
+            alignment: center;
+            Button { text: "↻ 重新整理"; clicked => { root.refresh_clicked() } }
+            Button { text: "ℹ 系統資訊"; clicked => { root.info_clicked() } }
+            Button { text: "💬 關於"; clicked => { root.about_clicked() } }
+            Button { text: "❌ 結束"; clicked => { root.exit_clicked() } }
+        }
+
+        Rectangle {
+            height: 1px;
+            background: #d6d6d1;
+        }
+
+        Rectangle {
+            height: 32px;
+            background: #ebebe8;
+            HorizontalLayout {
+                padding-left: 16px; padding-right: 16px; spacing: 20px;
+                Text { text: "進程: " + root.proc_count; font-size: 11px; color: #5e5c64; vertical-alignment: center; }
+                Text { text: "溫度: " + root.cpu_temp; font-size: 11px; color: #5e5c64; vertical-alignment: center; }
+                Rectangle { horizontal-stretch: 1; }
+                Text { text: "運行時間: " + root.uptime; font-size: 11px; color: #5e5c64; vertical-alignment: center; }
+                Text { text: "更新: " + root.last_update; font-size: 11px; color: #5e5c64; vertical-alignment: center; }
+            }
+        }
+    }
+}
